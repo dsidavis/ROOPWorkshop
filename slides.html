@@ -773,7 +773,7 @@ setMethod("plot", "Celcius", function(x, y, ...) {
 
 + Or override and reuse.
 
---
+---
 # callNextMethod()
 
 
@@ -831,7 +831,7 @@ Error in new("TemperatureDegree", c(1, 3, 10)) :
    + registering method for virtual class to be inherited by subclasses.
 
 <!--
-----
+
 
 ```
 cc = new("Celcius", c(0, 75, 100))
@@ -850,7 +850,8 @@ f = as(cc, "Faranheit")
 ---
 
 # Multiple Inheritance
-  +  Can inherit
+  + Can inherit from multiple classes simultaneous;
+  + Order determines how we search for methods.
 
 ---
 # Generic Functions in S4
