@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OOP & Software Engineering in R</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# OOP & Software Engineering in R
+
+
+## [https://github.com/dsidavis/OOPSoftwareEnginR](https://github.com/dsidavis/OOPSoftwareEnginR)
+
+### Duncan Temple Lang
+
+<div style="clear: both"/>
+
+<!-- <hr width="50%"/> -->
+<img src="http://dsi.ucdavis.edu/images/dsi_banner.png" height="40%"></img>
+
+---
+layout: true
+<img style="float: right" src="http://dsi.ucdavis.edu/images/dsi_brand_logo.png"></img>
+
+---
+
+# Object Oriented Programming
+
++ Classes are everywhere in R and important to understand them.
+
++ R modeling software built on simple object oriented mechanism.
+
++ Generic functions.
+
++ Extensible.
+
++ Good software design mechanism.
+  + Reduces repeating code.
+
+
+---
+
+# OOP
+
++ Helps to provide structure
+  + conceptually for author and user
+
++ Queryable structure rather than just reading the code
+
++ Provides extra checks
+
++ Enables code to behave differently without changing it!
+  + Customizable and extensible.
+  + Don't have to own code
+  + Don't break code.
+
++ Encourages high-level programming above implementation details.
+  + Delegate implementation/representation specific code to help methods.
+
++ Encourages smaller, more focused functions.
+
+---
+
+# OOP in R
+
+## Functional
++ S3
++ S4
+
+## Mutable (!)
++ Reference classes
++ R6, ...
+
+
+# Dispatch
++ Single (S3, R6)
++ Multi S4
+
+---
+# Functional versus Reference
+
++ Functional programming
+   + no side effects
+
++ Key is that pass the same inputs to a function, get the same result.
+   + Not changing state
+
++ Haskell and other languages
+
++ R is "98%" functional.
+  + Not quite because
+     + global variables
+     + environments,
+     + options(),
+     + graphics devices,
+     + connections,
+     + external pointers
+     + random number generator
+
++ Related to pass by value
+   + pass object to function
+   + function changes object
+   + no change in caller for original object
+   + caller does not see changes
+      + unless object is returned
+      + but separate object
+
++ Much easier to reason about code
+   + fewer bugs
+   + easier to track how something changed
+
+---
+
+# References
+
++ pass inputs by reference to a function
++ function makes change
++ caller sees thos changes
+   + whether wants to or not.
+
++ Benefits
+   + avoids copies.
+   + makes it easy to return multiplee values
+     + one return value
+     + but also communicate changes to inputs
+   + update state across calls
+
++ Can do this with closures
++ Reference classes in Python, Java, C++
+   + methods can change fields in object.
+
++ Downsides
+   + Hard to find bugs
+   + Hard to reason where something changed
+     + deep in the call stack
+
+---
+
+# Key Concepts
+
++ Generic functions & methods
++ Semi-Structured and fully-Structured class definitions
+   + S3 versus S4.
+
+---
+
+# What do classes & methods solve?
+
++ Users call one function that behaves differently based on the types of the inputs/arguments.
+   + Users only have to remember one verb, not complex function names.
++ Separate code for different types of input into separate functions.
++ Override, extend functionality for one or more types.
+  + reuse code.
++ Inherit code (methods) from other
++ Relationships between class hierarchies.
+
+---
+
+# S3
+
++ Query the class of an object with `class(x)`
+   + Different from `typeof(x)`
+
++ class() is conceptual, what does it represent
+   + not implementation or "how constructed"
+
++ just label(s)
+   + no restriction (or guarantee) on content and structure.
+   + just implicit that it makes sense.
+
++ Very different from C++, Java.
+
++ Put a class on an object
+```
+class(pi) = "A"
+```
++ can be a vector class labels, not just one
+```
+class(obj) = c("A", "B")
+```
+   + order matters
+
+---
+
+# Generic Functions
+
++ Basic verb/action
+  + Implementation is different for different types
+  + Returns the same conceptual result.
+
++ dim(), plot(), dim(), summary(), ..
+
+---
+# Benefit of Generic Functions
+
++ If the computations in a function call generic functions
+  + can accept different inputs.
+  + will behave appropriately for those inputs.
+
+
+---
+# Top 50 Generic Functions
+
++ i.e. most methods in R packages on CRAN
++ 11,851 unique generic functions.
+
+```
+ [1] "print"          "plot"           "summary"
+ [4] "predict"        "coef"           "["
+ [7] "as.data.frame"  "logLik"         "residuals"
+[10] "vcov"           "fitted"         "format"
+[13] "as.character"   "confint"        "update"
+[16] "anova"          "lines"          "c"
+[19] "trainLearner"   "as.matrix"      "predictLearner"
+[22] "[<-"            "makeRLearner"   "nobs"
+[25] "dim"            "length"         "as.list"
+[28] "HTML"           "simulate"       "subset"
+[31] "[["             "names"          "tidy"
+[34] "model.matrix"   "AIC"            "fortify"
+[37] "autoplot"       "deviance"       "model.frame"
+[40] "+"              "$"              "str"
+[43] "formula"        "rbind"          "head"
+[46] "Ops"            "[[<-"           "pander"
+[49] "points"         "mean"
+```
+---
+
+# Generic Function Examples
+
++ Fit a linear model
+```
+m = lm(mpg ~ wt, mtcars)
+class(m)
+```
+
++ abline() understands about linear models
+```
+plot(mpg ~ wt, mtcars)
+abline(m)
+```
+
++ Plot knows about about linear models
+```
+plot(m)
+```
+
+
++ coef()
+```
+coef(m)
+residuals(m)
+```
+
+---
+# A regression tree model
+```
+tr = rpart::rpart(mpg ~ wt, mtcars)
+residuals(tr)
+```
+
+```
+plot(tr)
+text(tr)
+```
+
+---
+
+# 2 Classes
+
+```
+now = Sys.time()
+class(now)
+```
+
+```
+typeof(now)
+```
+
+
++ Note: the print() method takes care of displaying this appropriately.
+
+---
+
+# Motivating Example
+
+```
+library(Rtesseract)
+ts = tesseract("Bardos-1975_1.jpg")
+plot(ts)
+```
+
++ plot() method for tesseract object
+```
+class(ts)
+[1] "TesseractBaseAPI"
+attr(,"package")
+[1] "Rtesseract"
+```
+
++ If we compute the locations of the OCR elements with
+```
+bb = GetBoxes("Bardos-1975_1.jpg")
+```
+then harder to plot
+```
+Rtesseract:::plot.OCR( bbox = bb, filename = "Bardos-1975_1.jpg")
+```
+
++ And we want a version that shows the recovered text, not the image.
+---
+
+# An Approach
+
++ Put a class on a general data.frame,
++ provide a method for plot() for this class.
+
+
++ Example: Optical Character Recognition results
+```
+class(bb)
+```
+
++ Set the class
+```
+class(bb) = c("OCRResults", class(bb))
+```
+
++ Define a plot method as `plot.OCRResults`
+```
+plot.OCRResults =
+function(x, y, cex = 1, ...)
+{
+    plot(0, type = "n", xlim = range(c(x$left, x$right)) * c(.95, 1.05),
+           ylim = range(c(x$top, x$bottom))*c(.95, 1.05), xlab = "", ylab = "")
+
+    h = max(x$top)
+    text(x$left, h - x$bottom, x$text, adj = c(0, 0), cex = cex)
+}
+```
+
+---
+
+# Notes
+
++ Note that bb is still a data.frame.
+
++ Still obeys bb$top, bb[, "top"], etc.
+
++ If we remove plot.OCRResults, will use plot method for data.frame
+```
+rm(plot.OCRResults)
+plot(bb)
+```
+
+
+---
+
++ Functions can check the class label
+```
+if(class(x) == "matrix")
+  # do something specific for matrix...
+```
+
++ Class vector may have more than one label, e.g. POSIXt and POSIXlt
+```
+ "matrix" %in% class(x)
+```
+or better
+```
+  inherits(x, 'matrix')
+  is(x, 'matrix')
+```
++ inherits() in base R
++ is() in methods package
+
+---
+
++ Handle 2 or more classes differently
+
++ 
+```
+if(is(x, "matrix")) {
+
+} else if(is(x, "data.frame")) {
+
+} else {
+  # default computation
+}
+``
+
++ This allows code to behave differently depending on its input.
+
++ So user can call one function, but it behaves differently based on the
+type of one input.
+
+---
+# Better Approach - Method Dispatch
+
++ Consider idiom
+```
+myFun = function(x) {
+    if(inherits(x, 'A')) ...
+    else if(inherits(x, 'B')) ...
+    else if(inherits(x, 'C')) ...
+    else  ...  # default
+}
+```
+
++ The collection if() statements can become long and hard to read and maintain.
+
++ What if we want to introduce a new class 'D'?
+```
+else if(inherits(x, 'D')) ...
+else ...
+```
+
++ But have to modify original function.
++ What if it is in a package?
++ Or we don't own the function?
+
+---
+
+# Better Approach
+
++ Separate code for each class
+
++
+```
+myFun.A = function(x) ...
+myFun.B = function(x) ...
+myFun.C = function(x) ...
+myFun.default = function(x) ...
+```
+
++ R looks at myFun and finds appropriate *method* based on class of x.
+
++ Define **generic** myFun() as
+```
+myFun = function(x, ...) UseMethod("myFun")
+```
+
+
+---
++ ... in Generic Function
+
++ Good idea to add ... in generic function
++ Allows methods to define additional parameters.
+
+---
+
+# S3 - single dispatch.
+
++ Looks at class of only one argument - typically first.
++ Can't define a method for, e.g.,
+```
+   x - character &  y -  matrix
+   x - list      &  y - data.frame
+   x - list      &  y - missing    &  z - missing
+```
+
++ Need S4 to do this
+
+
+
+
+---
+# Packages, Exporting Classes &amp; Methods
+
++ export generic functions
++ S3method()
+
+
+---
+# S4
+
++ Formal definitions of classes, methods
++ Provides more reliable, verifiable structure to code
+  + errors are caught
+
++ Can query
+   + what classes are defined
+   + structure of all objects from a class
+   + relationships between the classes
+
++ Test validity of an instance
+  + Not just structure, but content.
+  + e.g.
+     + all slots have same length
+     + all starts are ealier than ends
+     + all values are positive
+     + black and white image has no color
+  
++ Abstract or virtual classes
++ Classes that are instance of one of several classes.
+
+
+---
+# S4 Functions
+
++ setClass()
++ setGeneric()
++ setMethod()
++ setAs()
+
+---
+# Defining Classes
+
++ Define classes formally
+  + Not just label, but structure
+
++ A class has "slots"
+  + data stored in the object,
+  + each slot has name and a type
+
+```
+Bob = setClass("Bob", slots = list(x = "integer", y = "numeric"))
+```
+
++ Create new objects with constructor function or new()
+```
+b = Bob(x = 10L, y = pi)
+b = new("Bob", x = 10L, y = pi)
+```
+---
+# Ensures structure
+
++ Can't create an object with slots of wrong type.
+
++ Compare with S3
+  + can put anything into a field
+  + can create new fields on the fly.
+  + just implicit "contract" to have object with elements that make sense.
+
++
+
+---
+# setClass() Example
+
++ lubridate package
+
+
+---
+# setClass() Example
+
++ Degree
+  + Celcius
+  + Faranheit
+  + Kelvin
+  + Rankine
+
++ Also latitude and longitude.
+  + Have to think about how to represent these - degrees and minutes
+  + How to clearly separate from temperature.
+
+
+```
+setClass
+```
+
+
+<!--
+     is()
+
+     selectMethod()
+     debug a method - trace
+-->
+
+---
+# as() and coercion - setAs()
+
++ register a method for converting from one class 
+```
+setAs(fromClassName, toClassName, function(from) ...)
+```
+
++ Once registered, use as
+```
+as(ts, "Pix")
+```
+```
+doc = as(filename, "PDFToXMLDoc")
+```
+
++ Contrast with
+```
+if(as(doc, "character"))
+  doc = readPDFXML(doc)
+```
+or worse
+```
+if(as(doc, "character"))
+  doc = readPDFXML(doc)
+else if(is(doc, "PDFToXMLPage"))
+  doc = as(doc, "XMLInternalDocument")
+```
+
++ End up repeating this if() block in many functions.
+  + replace everywhere with `doc = as(doc, "PDFToXMLDoc")`.
+  + Easier to maintain and extend
+  + Slightly more efficient.
+
++ Downside with as() is we cannot provide additional arguments to parameterize the creation.
+  + e.g. `readPDFXML("contentNotFilename", asText = TRUE)` versus
+         `as("contentNotFilename", "PDFToXMLDoc")`
+
+---
+# setAs()
+
++ Define two classes for temperature
+   + Note: Not necessarily a good way to do this. See below
+```
+setClass("Celcius", contains = "numeric")
+setClass("Faranheit", contains = "numeric")
+```
+
+```
+setAs("Celcius", "Faranheit",
+      function(from) {
+        from * 1.8 + 32
+      })
+```
+
++ Can use as
+```
+cc = new("Celcius", c(0, 75, 100))
+f = as(cc, "Faranheit")
+class(f)
+```
+
++ Problem, the result is not Faranheit
+```
+setAs("Celcius", "Faranheit",
+      function(from) {
+         new("Faranheit", from * 1.8 + 32)
+      })
+```
+
+
++ And define coercion method for other direction
+```
+setAs("Faranheit", "Celcius",
+      function(from) {
+         new("Celcius", (from - 32)/1.8)
+      })
+```
+
+
+---
+# Inheritance
+
++ Subclasses
+  + B inherits from A
+  + A is a superclass of B
+
++ Inherit the structure of the base/super class
+  + Avoid repeating slots in definition
+
++ Establish relationship between classes
+  + so instance/object of subclass can be used when instance of base class expected
+
+```
+setClass("TemperatureDegree", contains = "numeric")
+setClass("Celcius", contains = "TemperatureDegree")
+setClass("Faranheit", contains = "TemperatureDegree")
+setClass("Kelvin", contains = "TemperatureDegree")
+```
+
+
+```
+cc = new("Celcius", c(0, 75, 100))
+```
+
+```
+is.numeric(cc)
+```
+
+```
+f = as(cc, "Faranheit")
+```
+---
+
+# Multiple Inheritance
+  +
+
+---
+# Generic Functions in S4
+
++ If generic already defined, we can just add methods.
+
++ If function not defined, or defined but not a generic function,
+  need to define generic version
+
++ To define a generic, setGeneric().
+   + analogous to S3 UseMethod()
+
+```
+setGeneric("frame",
+            function(x, y, ...)
+```
+
++ Think about suitable name and how it may have other meanings
++ Think about what parameters are needed for all methods.
++ Allow additional parameters via `...`
+---
+# Methods
+
+```
+setMethod("nameOfGenericFun",
+          signature,
+          function(x, y, z, ...) {
+
+          })
+```
+
+---
+
+# Examples - Rtesseract
+
++ See setMethod.R
+
+
+---
+# Examples - Methods for [, with "missing"
+
++ Not missing value - NA, but argument is not present.
+
++ See setMethodMissing.R
+
+---
+# S4 in Packages
+
++ In NAMESPACE
+  + import(methods)
+  + exportClasses()
+  + export(genericFuns)
+  + exportMethods(fun1, fun2)
+
++ exportMethods() exports all methods for that function.
+  + Can't select some to be internal and others available.
+
+---
+# Using Classes and Methods from Other Packages
+
++ importClassesFrom(pkg, ..)
++ importMethodsFrom(pkg, ..)
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>

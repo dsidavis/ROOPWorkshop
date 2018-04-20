@@ -1,0 +1,8 @@
+In this workshop, we'll discuss object-oriented concepts in R.  We'll
+cover the concepts provided by the S3, S4, Reference classes and S6
+mechanisms.  We'll talk about how to understand and work with them, use them
+when developing functions and methods, and in the context of
+packages. This will cover making code extensible and customizable.  As
+always, we hope to have a lot of discussion of concepts and best
+practices.
+
