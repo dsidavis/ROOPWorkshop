@@ -1,5 +1,3 @@
-
-
 setClass("Timespan")
 
 setClass("Duration", contains = c("Timespan", "numeric"), validity = NULL) # check_duration)
