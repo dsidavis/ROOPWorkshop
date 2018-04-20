@@ -169,6 +169,95 @@ layout: true
 + Inherit code (methods) from other
 + Relationships between class hierarchies.
 
+
+---
+
+# Bad Approach to Generic Functions
+
++ Functions can check the class label
+```
+if(class(x) == "matrix")
+  # do something specific for matrix...
+```
+
++ Class vector may have more than one label, e.g. POSIXt and POSIXlt
+```
+ "matrix" %in% class(x)
+```
+or better
+```
+  inherits(x, 'matrix')
+  is(x, 'matrix')
+```
++ inherits() in base R
++ is() in methods package
+
+---
+
++ Handle 2 or more classes differently
+
++ 
+```
+if(is(x, "matrix")) {
+
+} else if(is(x, "data.frame")) {
+
+} else {
+  # default computation
+}
+``
+
++ This allows code to behave differently depending on its input.
+
++ So user can call one function, but it behaves differently based on the
+type of one input.
+
+---
+# Better Approach - Method Dispatch
+
++ Consider idiom
+```
+myFun = function(x) {
+    if(inherits(x, 'A')) ...
+    else if(inherits(x, 'B')) ...
+    else if(inherits(x, 'C')) ...
+    else  ...  # default
+}
+```
+
++ The collection if() statements can become long and hard to read and maintain.
+
++ What if we want to introduce a new class 'D'?
+```
+else if(inherits(x, 'D')) ...
+else ...
+```
+
++ But have to modify original function.
+  + What if it is in a package?
+  + Or we don't own the function?
+
+---
+
+# Better Approach
+
++ Separate code for each class
+
++
+```
+myFun.A = function(x) ...
+myFun.B = function(x) ...
+myFun.C = function(x) ...
+myFun.default = function(x) ...
+```
+
++ R looks at myFun and finds appropriate *method* based on class of x.
+
++ Define **generic** myFun() as
+```
+myFun = function(x, ...) UseMethod("myFun")
+```
+
 ---
 
 # S3
@@ -296,7 +385,71 @@ typeof(now)
 
 ---
 
-# Motivating Example
+# S3 Dispatch
+## How does R find an S3 method?
+
++ Only happens for generic functions
+  + Body is `UseMethod("myGenericFunName")`
+
+
++ In generic function
+   + R computes class() vector -
+   + essentially computes fun.className for all class names of obj & "default"
+```
+paste(genericName, c(class(obj), "default"), sep = ".")
+```
+   + for each of these, searches for a function (in package or search() path)
+   + stops when it finds a function
+   + invokes that function
+
+---
+# Turning a Function into a Generic with Methods
+
++ Existing function
+```
+foo =
+function(x, y, col = "red")
+{
+  # ....
+}
+```
++ Create generic (not quite)
+```
+foo =
+function(x, y, col = "red")
+{
+   UseMethod("foo")
+}
+```
+
++ Add ... to parameters.
++ Should think about whether parameters are suitable for all methods
+   + Absorb some of the original parameters that are method specific into ...
+
++ Redefine original function as foo.default, or a for a specific class.
+
++ So full sequence:
+```
+foo.default = foo
+foo =
+function(x, ...)
+{
+   UseMethod("foo")
+}
+```
+
++ Define other methods
+```
+foo.matrix =
+function(x, col = "red", ...)
+{
+
+}
+```
+---
+
+# Developing a Method
+## Example
 
 ```
 library(Rtesseract)
@@ -366,94 +519,6 @@ function(x, y, cex = 1, ...)
 rm(plot.OCRResults)
 plot(bb)
 ```
-
-
----
-
-+ Functions can check the class label
-```
-if(class(x) == "matrix")
-  # do something specific for matrix...
-```
-
-+ Class vector may have more than one label, e.g. POSIXt and POSIXlt
-```
- "matrix" %in% class(x)
-```
-or better
-```
-  inherits(x, 'matrix')
-  is(x, 'matrix')
-```
-+ inherits() in base R
-+ is() in methods package
-
----
-
-+ Handle 2 or more classes differently
-
-+ 
-```
-if(is(x, "matrix")) {
-
-} else if(is(x, "data.frame")) {
-
-} else {
-  # default computation
-}
-``
-
-+ This allows code to behave differently depending on its input.
-
-+ So user can call one function, but it behaves differently based on the
-type of one input.
-
----
-# Better Approach - Method Dispatch
-
-+ Consider idiom
-```
-myFun = function(x) {
-    if(inherits(x, 'A')) ...
-    else if(inherits(x, 'B')) ...
-    else if(inherits(x, 'C')) ...
-    else  ...  # default
-}
-```
-
-+ The collection if() statements can become long and hard to read and maintain.
-
-+ What if we want to introduce a new class 'D'?
-```
-else if(inherits(x, 'D')) ...
-else ...
-```
-
-+ But have to modify original function.
-+ What if it is in a package?
-+ Or we don't own the function?
-
----
-
-# Better Approach
-
-+ Separate code for each class
-
-+
-```
-myFun.A = function(x) ...
-myFun.B = function(x) ...
-myFun.C = function(x) ...
-myFun.default = function(x) ...
-```
-
-+ R looks at myFun and finds appropriate *method* based on class of x.
-
-+ Define **generic** myFun() as
-```
-myFun = function(x, ...) UseMethod("myFun")
-```
-
 
 ---
 + ... in Generic Function
@@ -546,12 +611,14 @@ b = new("Bob", x = 10L, y = pi)
   + can create new fields on the fly.
   + just implicit "contract" to have object with elements that make sense.
 
-+
++ Validity method on class arbitrary function that checks content, not just structure.
 
 ---
 # setClass() Example
 
-+ lubridate package
+
++ [raster package]()
++ [lubridate package]()
 
 
 ---
@@ -568,14 +635,9 @@ b = new("Bob", x = 10L, y = pi)
   + How to clearly separate from temperature.
 
 
-```
-setClass
-```
-
 
 <!--
      is()
-
      selectMethod()
      debug a method - trace
 -->
@@ -673,6 +735,8 @@ setAs("Faranheit", "Celcius",
 + Establish relationship between classes
   + so instance/object of subclass can be used when instance of base class expected
 
+
++ Use contains parameter to specify subclass(es) 
 ```
 setClass("TemperatureDegree", contains = "numeric")
 setClass("Celcius", contains = "TemperatureDegree")
@@ -680,6 +744,94 @@ setClass("Faranheit", contains = "TemperatureDegree")
 setClass("Kelvin", contains = "TemperatureDegree")
 ```
 
++ Now is() relationships between each of Celcius, Faranheit, Kelvin for TemperatureDegree
+```
+is(new("Celcius"), "TemperatureDegree")
+```
+
+---
+# Inheritance
+
+
++ Define methods on base class
+  + Don't need to repeat for each subclass
+```
+setMethod("plot", "TemperatureDegree",
+          function(x, y, ...) {
+            plot(density(x), ...)
+          })
+```
+
++ If we want to define method for subclass, we can
+```
+setMethod("plot", "Celcius", function(x, y, ...) {
+    # Different computations
+  })
+```
+
++ So can override behavior of base class, or just use it.
+
++ Or override and reuse.
+
+--
+# callNextMethod()
+
+
++ Define a method for subclass
+  + Invoke inherited method
+  + add additional computations
+```
+setMethod("plot", "Celcius", function(x, y, ...) {
+   callNextMethod()
+   abline(v = c(0, 100))
+})
+```
+
++ Any changes to the base class method are automatically available.
+
++ We can do computations before and after the call to callNextMethod()
+
++ Analogous to but more flexible than S3's NextMethod()
+
+
+---
+
+# Has-A and Is-A
+
++ Difference between a class
+   + having a slot that has class A, and
+   + extending/inheriting from class A
+
+---
+
+
+# Virtual/Abstract Classes
+
++ Some classes in hierarchy intended to be used only as base classes.
+   + e.g. TemperatureDegreee
+   + Can't create a meaningful object of this type
+
++ Mark as VIRTUAL via
+```
+setClass("TemperatureDegree", contains = c("numeric", "VIRTUAL"))
+setClass("Celcius", contains = "TemperatureDegree")
+setClass("Faranheit", contains = "TemperatureDegree")
+setClass("Kelvin", contains = "TemperatureDegree")
+```
+
++ Attempt to create instance  of the class gives error
+```
+new("TemperatureDegree", c(1, 3, 10))
+Error in new("TemperatureDegree", c(1, 3, 10)) : 
+  trying to generate an object from a virtual class ("TemperatureDegree")
+```
+
++ But very useful for
+   + representing  concept
+   + registering method for virtual class to be inherited by subclasses.
+
+<!--
+----
 
 ```
 cc = new("Celcius", c(0, 75, 100))
@@ -692,10 +844,13 @@ is.numeric(cc)
 ```
 f = as(cc, "Faranheit")
 ```
+
+-->
+
 ---
 
 # Multiple Inheritance
-  +
+  +  Can inherit
 
 ---
 # Generic Functions in S4
@@ -758,6 +913,61 @@ setMethod("nameOfGenericFun",
 
 + importClassesFrom(pkg, ..)
 + importMethodsFrom(pkg, ..)
+
+
+---
+# Other S4 Topics
+
++ is()
+
++ selectMethod()
+
++ debug a method
+
+
+---
+# Idiom for Writing Functions
+
++ Move expressions in the body to parameters
+  + With default value being the expression from the body
+
++ Start writing a function
+```
+do = function(dir) {
+   files = list.files(dir)
+   info = file.info(files)
+   dirs = files[info$isdir]
+}
+```
++ First off, what about additional parameters to list.files(), e.g. recursive = TRUE, full.names = TRUE
+```
+do = function(dir, ...) {
+   files = list.files(dir, ...)
+   info = file.info(files)
+   dirs = files[info$isdir]
+}
+```
+
+---
+# Idiom for Writing Functions
+
++ What about moving the computations to parameters
+```
+do = function(dir, files = list.files(dir, ...),
+              info = file.info(files),
+              dirs = files[info$isdir], ...)
+{
+  # Nothing to do???!
+}
+```
+
++ Caller can
+   + compute files, info once and pass these in repeated calls
+     + useful when debugging.
+   + can specify subset of dirs and limit computations
+
++ Can take this too far
+   + No code in the body, or just a simple `return(dirs)`
 
     </textarea>
     <script src="https://remarkjs.com/downloads/remark-latest.min.js">
