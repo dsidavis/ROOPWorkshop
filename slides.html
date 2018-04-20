@@ -197,6 +197,7 @@ or better
 + Handle 2 or more classes differently
 
 + 
+
 ```
 if(is(x, "matrix")) {
 
@@ -205,7 +206,7 @@ if(is(x, "matrix")) {
 } else {
   # default computation
 }
-``
+```
 
 + This allows code to behave differently depending on its input.
 
@@ -421,6 +422,7 @@ function(x, y, col = "red")
    UseMethod("foo")
 }
 ```
+---
 
 + Add ... to parameters.
 + Should think about whether parameters are suitable for all methods
