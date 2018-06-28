@@ -12,4 +12,4 @@ The slides and narratives are at
 
 and there are several other examples and code segments here.
 
-See [ROOP](https://github.com/duncantl/ROOP) for other discussions.
+See [ROOP](https://github.com/duncantl/ROOP) for other discussions and narrative.
